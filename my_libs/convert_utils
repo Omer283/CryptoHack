@@ -1,0 +1,17 @@
+from Crypto.Util.number import long_to_bytes
+from base64 import b64decode
+
+def utf8_to_bytes(encoded):
+    return str.encode(''.join([chr(x) for x in encoded]))
+
+
+def bigint_to_bytes(encoded):
+    return long_to_bytes(int(encoded, 16))
+
+
+def base64_to_bytes(encoded):
+    return b64decode(encoded)
+
+
+def hex_to_bytes(encoded):
+    bytes.fromhex(encoded)

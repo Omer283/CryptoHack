@@ -68,3 +68,22 @@ def modular_sqrt(a, p):
         x = (x * gs) % p
         b = (b * g) % p
         r = m
+
+
+def crt_two(a1, a2, m1, m2):
+    mul = m1 * m2
+    x = a2 * inv(m1, m2) * m1 + a1 * inv(m2, m1) * m2
+    x %= mul
+    if x < 0:
+        x += mul
+    return x, mul
+
+
+def crt(a: list, m: list):
+    n = len(a)
+    if n == 1:
+        return a[0], m[0]
+    ca, cm = crt_two(a[0], a[1], m[0], m[1])
+    for i in range(2, n):
+        ca, cm = crt_two(ca, a[i], cm, m[i])
+    return ca, cm

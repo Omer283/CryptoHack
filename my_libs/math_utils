@@ -1,0 +1,26 @@
+
+def ext_gcd(a, b):
+    if b == 0:
+        return a, 1, 0
+    else:
+        g, y, x = ext_gcd(b, a % b)
+        y -= (a // b) * x
+        return g, x, y
+
+
+def inv(x, p):
+    return ext_gcd(x, p)[1]
+
+
+def bpw(a, k, p):
+    if k == 0:
+        return 1
+    b = bpw(a, k >> 1, p) % p
+    if k & 1:
+        b *= a
+        b %= p
+    return b
+
+
+def legendre_slow(a, p):
+    return bpw(a, (p - 1) // 2)

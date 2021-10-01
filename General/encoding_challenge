@@ -1,0 +1,44 @@
+from pwn import * # pip install pwntools
+import json, base64
+from Crypto.Util.number import long_to_bytes
+
+r = remote('socket.cryptohack.org', 13377, level = 'debug')
+
+def json_recv():
+    line = r.recvline()
+    return json.loads(line.decode())
+
+def json_send(hsh):
+    request = json.dumps(hsh).encode()
+    r.sendline(request)
+
+
+for _ in range(100):
+    received = json_recv()
+    print("Received type: ")
+    print(received["type"])
+    type = received["type"]
+    print("Received encoded value: ")
+    print(received["encoded"])
+    encoded = received["encoded"]
+    decoded = -1
+    if type == 'utf-8':
+        decoded = str.encode(''.join([chr(x) for x in encoded]))
+    elif type == 'bigint':
+        decoded = long_to_bytes(int(encoded, 16))
+    elif type == 'rot13':
+        rot13 = str.maketrans(
+            'ABCDEFGHIJKLMabcdefghijklmNOPQRSTUVWXYZnopqrstuvwxyz',
+            'NOPQRSTUVWXYZnopqrstuvwxyzABCDEFGHIJKLMabcdefghijklm')
+        decoded = str.encode(encoded.translate(rot13))
+        pass
+    elif type == 'base64':
+        decoded = base64.b64decode(encoded)
+    elif type == 'hex':
+        decoded = bytes.fromhex(encoded)
+    decoded = bytes.decode(decoded)
+    to_send = {
+        "decoded": decoded
+    }
+    json_send(to_send)
+r = json_recv()

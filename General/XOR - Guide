@@ -1,0 +1,6 @@
+import pwn
+
+def do_xor(s : str, x : int):
+    print(pwn.xor(s, x))
+
+do_xor('label', 13)

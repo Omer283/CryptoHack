@@ -1,0 +1,42 @@
+from Crypto.Cipher import AES
+import os
+from Crypto.Util.number import isPrime, bytes_to_long, inverse, long_to_bytes
+from convert_utils import *
+from pwn import xor
+
+
+KEY = "3"
+FLAG = "4"
+def decrypt(ciphertext):
+    ciphertext = bytes.fromhex(ciphertext)
+
+    cipher = AES.new(KEY, AES.MODE_ECB)
+    try:
+        decrypted = cipher.decrypt(ciphertext)
+    except ValueError as e:
+        return {"error": str(e)}
+
+    return {"plaintext": decrypted.hex()}
+
+
+def encrypt_flag():
+    iv = os.urandom(16)
+
+    cipher = AES.new(KEY, AES.MODE_CBC, iv)
+    encrypted = cipher.encrypt(FLAG.encode())
+    ciphertext = iv.hex() + encrypted.hex()
+
+    return {"ciphertext": ciphertext}
+
+
+ct = "1efa1458fe69d7e24fda432cc1519faa47a2f67a237e641f0ebfcbbfda3a0fb456ebc957cebba121d9eb93d8ded3597a"
+n = len(ct)
+blocks = [ct[0:32],
+          ct[32:64],
+          ct[64:96]]
+print(blocks)
+m1 = hex_to_bytes("63727970746f7b3363625f3575636b35")
+print(m1)
+m2 = hex_to_bytes("5f34763031645f31375f21212121217d")
+print(m2)
+print(m1+m2)

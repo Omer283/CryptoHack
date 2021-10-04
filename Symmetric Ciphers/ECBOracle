@@ -1,0 +1,34 @@
+import requests
+from convert_utils import *
+CHALLENGE_NAME = 'ecb_oracle'
+
+
+def encrypt(m):
+    r = requests.get('https://aes.cryptohack.org/' + CHALLENGE_NAME + '/encrypt/' + m + '/')
+    tmp = r.text
+    tmp2 = tmp.strip()[1:-1]
+    return tmp2.split(':')[1][1:-1]
+
+
+def get_aes(m):
+    return encrypt(m)[:64]
+
+
+zeros = '0000000000000000000000000000000000000000000000000000000000000000'
+flag = b'crypto{p3n6u1n5'.hex()
+i = 31 - 15
+
+while i > 0:
+    print(i)
+    zeros_cut = zeros[:2*i]
+    known = zeros_cut + flag
+    cur_enc = encrypt(zeros_cut)[:64]
+    for j in range(1<<8):
+        jhx = hex(j)[2:].zfill(2)
+        if cur_enc == get_aes(known + jhx):
+            flag += jhx
+            print(hex_to_bytes(flag))
+            break
+    i -= 1
+print(flag)
+'crypto{p3n6u1n5}'

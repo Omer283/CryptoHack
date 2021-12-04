@@ -1,0 +1,79 @@
+import base64
+import os
+from pwn import remote
+import json
+
+FLAG = "crypto{????????????}"
+
+
+def xor_flag_with_otp():
+    flag_ord = [ord(c) for c in FLAG]
+    otp = os.urandom(20)
+
+    xored = bytearray([a ^ b for a, b in zip(flag_ord, otp)])
+
+    # make sure our OTP doesnt leak any bytes from the flag
+    for c, p in zip(xored, flag_ord):
+        assert c != p
+
+    return xored
+
+
+class Challenge():
+    def __init__(self):
+        self.before_input = "No leaks\n"
+
+    def challenge(self, your_input):
+        if your_input == {"msg": "request"}:
+            try:
+                ciphertext = xor_flag_with_otp()
+            except AssertionError:
+                return {"error": "Leaky ciphertext"}
+
+            ct_b64 = base64.b64encode(ciphertext)
+            return {"ciphertext": ct_b64.decode()}
+        else:
+            self.exit = True
+            return {"error": "Please request OTP"}
+
+
+
+"""
+When you connect, the 'challenge' function will be called on your JSON
+input.
+"""
+
+ans = [{99}, {114}, {121}, {112}, {116}, {111}, {123}, {117}, {110}, {114}, {52}, {110}, {100}, {48}, {109}, {95}, {48}, {55}, {112}, {125}]
+ansl = [list(x) for x in ans]
+print(''.join(chr(x[0]) for x in ansl))
+
+HOST = 'socket.cryptohack.org'
+PORT = 13370
+p = remote(HOST, PORT)
+LEN = 20
+
+def json_recv():
+    line = p.recvline()
+    return json.loads(line.decode())
+
+
+def json_send(hsh):
+    request = json.dumps(hsh).encode()
+    p.sendline(request)
+
+print(p.recvline())
+pos = [{x for x in range(256)} for _ in range(LEN)]
+
+while max([len(l) for l in pos]) > 1:
+    print(max([len(l) for l in pos]))
+    json_send({"msg": "request"})
+    y = json_recv()
+    if 'error' in y:
+        continue
+    y_bytes = y['ciphertext'].encode()
+    y_hex = base64.b64decode(y_bytes)
+    for i in range(LEN):
+        if y_hex[i] in pos[i]:
+            pos[i].remove(y_hex[i])
+
+print(pos)

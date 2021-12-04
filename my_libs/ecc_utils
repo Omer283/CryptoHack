@@ -1,0 +1,39 @@
+import math_utils
+
+
+#point addition in weierstrass curves. zero is written as 0
+def point_add(p1, p2, a=497, b=1768, p=9739):
+    if p1 == 0:
+        return p2
+    elif p2 == 0:
+        return p1
+    p1[0] %= p
+    p1[1] %= p
+    p2[0] %= p
+    p2[1] %= p
+    if p1[0] == p2[0] and (p1[1] + p2[1]) % p == 0:
+        return 0
+    else:
+        if p1 != p2:
+            ld = (p2[1] - p1[1]) * math_utils.inv(p2[0] - p1[0], p)
+        else:
+            ld = (3 * p1[0] * p1[0] + a) * math_utils.inv(2 * p1[1], p)
+        x3 = (ld * ld - p1[0] - p2[0]) % p
+        return [x3, (ld * (p1[0] - x3) - p1[1]) % p]
+
+
+def on_curve(pt, a=497, b=1768, p=9739):
+    if pt == 0:
+        return True
+    return (pt[1] * pt[1] - pt[0] * pt[0] * pt[0] - a * pt[0] - b) % p == 0
+
+
+def scalar_mult(pt, n, a=497, b=1768, p=9739):
+    cur = 0
+    mult = pt
+    while n > 0:
+        if n & 1:
+            cur = point_add(cur, mult, a, b, p)
+        mult = point_add(mult, mult, a, b, p)
+        n >>= 1
+    return cur

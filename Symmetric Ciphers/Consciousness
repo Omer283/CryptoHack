@@ -1,0 +1,60 @@
+import requests
+from convert_utils import *
+from pwn import xor
+CHALLENGE_NAME = 'stream_consciousness'
+
+
+def encrypt():
+    r = requests.get('https://aes.cryptohack.org/' + CHALLENGE_NAME + '/encrypt')
+    tmp = r.text
+    tmp2 = tmp.strip()[1:-1]
+    return tmp2.split(':')[1][1:-1]
+"""
+s = set()
+cnt = 0
+while cnt <= 100:
+    w = encrypt()
+    if w in s:
+        cnt += 1
+    else:
+        s.add(w)
+        cnt = 0
+print(len(s))
+for w in s:
+    print(f'"{w}",')
+"""
+l=["6d83c362f7fde5c137290ee5cd94a2f1656dbdba48ecf3b664fd73e4c58c78090a916db4a9e629bbfc7cdbd3de5c775f131a6d30e6db2b3e5d66307e82c05044c7f2b2951bb93e26e0",
+"6e84d37df6fdc48e2d3b1df3c1d6b3f5657bebbc4dbef5b760f436b080cd6446349147fbb0e52cefe67c9addcf0f61461652243aa3df373f5d663c79d0da4c48c9fbfbd94fa4392da6811fc9deb8f26e692c47eda49d8e328f5a7ec5af28a83fa4b3f3f9d57fe55057ee9877306827644566a6491ee818",
+"6d84d77ab3bc8c8f3e3b0cf9cd85aaf86064ebab44a5f4fe71f23afed9cd6448279f",
+"73ccc566f2b1c0c133270be5cd93b1f87e71bfb745a2e0fe60fd37b0c382780924d47afbb4e320bbec78d9db98",
+"6e84d32ee7b8de93362a14e5cd82aff4626febb65fecf3b660e773e4c5882c5922c27afbbfeb23bcfa39d8d596086b581e522221f78b3d2f0e2f2b6b82da4a46daedf5",
+"6d84cf2ef7b28c95372d01a08a99e7f26228bbbe45a2f3b76ff473f1c3892c4b36d862bfb5e42abbef75d690c214610a041b2031bc",
+"7899c22edafddb88332458f38599b0bd6461a6f1",
+"7683c06bbffddc93302a19e2818ff8bd5860aea60ca8e8b026e773fbc3827b092bde79fbb8f828fafc609ad9c25c6d595c52253bf48b3723432f3371c3dc4c47c9b0f5da4fa4392dffe71bc990acfb22282a4abefcd5852b9f08528bf2",
+"7398966df2b38b957f2a1da09999b5f32c67beab00ece5ab75b33ae48d8e6d4763d36bfbb5ed23f4fc7cde9e",
+"7e9ed37de0f0c180342116e7cd97a9f92c45a2b340a5e9bb73ea",
+"73cbdb2ee6b3c4802f3801accdbfe7f9697baead5aa9a7b775bf73e4c5882c4f22c462affbf96df6e777df9c961e715e503b6a39a3de313e4f362f6182c949458eeab3914fa33025ba8a4dc49bb5ee22242100",
+"7283c12ee3afc3943b6819ee89d6affc7c78b2ff44a9a0b26db331f58d9a644c2d9166befced28effd39d7c996126b5e1553",
+"7b9f9667f5fde5c137291ca08c98bebd7b61b8b70cb8e8fe63f673f9c3cd784126917cb2bbe239baae509ad3d712235e51",
+"6a89c466f2addfc1372d58e88c85e7f0657bb8ba48ecf3b664b327e2cc84620922df6afbb5f96df9ef7ad190d40524441f056374d4ca31220e2b306ac7884d5cc3f7b79d0ea43827b187",
+"73ccc566f2b1c0cd7f015fec81d6abf27f6debba5aa9f5a775fb3afecacd654f63d96bfbb8e528e8e03ece90d513694f50102c37e885",
+"7b82d22edafddf893e2414a08491a9f27e6debb658e2",
+"74839a2edafac08d7f2f17a08498e7e963288fb040a0fefe60fd37b0d988604563d96ba9fcf939e9ef70ddd8c25c6b5f04",
+"599ecf7ee7b2d78a6c314db79fc5f3f0537af8aa19ffd8ef34cc35a49ad96054",
+"7599c431b38ac4987f270df2d2",
+"6e84c46bf6fdce8e263b58f29898a9f4626fe7ff5ca0e6a768fd34b0cc992c412cc37dbeafa66dc8eb6bc3dfcc14650b",
+"6d84d77ab3bc8c8d303c58ef8bd6b3f56566acac0cb8efbf75b327f8c8832c5a26d463beb8aa39f4ae74df90c513244711003b31efc730235d663e76c6885047cfeaaf9506be302ab3c3418c96b8e86769264bfdf0d089679214448cbb2ea035a1f0fcf2d736b7114aefdd232c65627d0d6eaf4f04a67f3cfbad7386fe70b8c0f884d41dec7423b1300e6dc65d73836980068d29f20bbc0363302a73c50d0f",
+"7e83da62eafddb88332458f4859fa9f62c7ca3be58eccef96cb33ff5cc9b654724916ffbafef2ef4e07d9ad8c30f664b1e166d35edcf7f2246272b38d6c0405bcbf8b4860af01868b2d31ed8deaaeb702c2857befdd8cc2e955a438db960be21a7fdfab2"]
+
+print(l.index("599ecf7ee7b2d78a6c314db79fc5f3f0537af8aa19ffd8ef34cc35a49ad96054"))
+while True:
+    i = int(input('guess index'))
+    pre = input('guess prefix')
+    wp = l[i][:2 * len(pre)]
+    wpb = hex_to_bytes(wp)
+    wxor = xor(wpb, pre.encode())
+    for j in range(len(l)):
+        if len(l[j]) < 2 * len(pre):
+            continue
+        print(f'{j}: {xor(hex_to_bytes(l[j][:2*len(pre)]),wxor).decode()}')
+

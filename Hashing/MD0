@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+import telnetlib
+import json
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import os
+
+def readline():
+    return tn.read_until(b"\n")
+
+def json_recv():
+    line = readline()
+    return json.loads(line.decode())
+
+def json_send(hsh):
+    request = json.dumps(hsh).encode()
+    tn.write(request)
+
+
+HOST = "socket.cryptohack.org"
+PORT = 13388
+
+tn = telnetlib.Telnet(HOST, PORT)
+
+def bxor(a, b):
+    return bytes(x ^ y for x, y in zip(a, b))
+
+
+def hash(data, out = b"\x00" * 16):
+    data = pad(data, 16)
+    for i in range(0, len(data), 16):
+        blk = data[i:i+16]
+        out = bxor(AES.new(blk, AES.MODE_ECB).encrypt(out), out)
+    return out
+
+print(readline())
+json_send({"option" : "sign" , "message" : ""})
+sg = bytes.fromhex(json_recv()['signature'])
+const_msg = b'admin=True'
+true_sgn = bxor(sg, AES.new(pad(const_msg, 16), AES.MODE_ECB).encrypt(sg))
+padded_msg = (b'\x10' * 16).hex() + const_msg.hex()
+json_send({"option" : "get_flag", "signature" : true_sgn.hex(), "message": padded_msg})
+print(json_recv())

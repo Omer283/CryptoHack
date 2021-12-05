@@ -1,0 +1,78 @@
+from hashlib import sha256
+import os
+from pwn import remote
+import json
+from Crypto.Util.number import long_to_bytes
+
+FLAG = b"crypto{???????????????????????????????}"
+
+
+def _xor(a, b):
+    return bytes([_a ^ _b for _a, _b in zip(a, b)])
+
+def _and(a, b):
+    return bytes([_a & _b for _a, _b in zip(a, b)])
+
+def shuffle(mixed_and, mixed_xor):
+    return bytes([mixed_xor[i%len(mixed_xor)] for i in mixed_and])
+
+
+class Challenge():
+    def __init__(self):
+        self.before_input = "Oh no, how are you going to unmix this?\n"
+
+    def challenge(self, msg):
+        if "option" not in msg:
+            return {"error": "You must send an option to this server."}
+
+        elif msg["option"] == "mix":
+            if not "data" in msg:
+                return {"error": "Please send hex-encoded data"}
+
+            data = bytes.fromhex(msg["data"])
+            if len(data) < len(FLAG):
+                data += os.urandom(len(FLAG) - len(data))
+
+            mixed_and = _and(FLAG, data)
+            mixed_xor = _xor(_xor(FLAG, data), os.urandom(len(FLAG)))
+
+            very_mixed = shuffle(mixed_and, mixed_xor)
+            super_mixed = sha256(very_mixed).hexdigest()
+
+            return {"mixed": super_mixed}
+
+        else:
+            return {"error": "Invalid option"}
+
+
+
+HOST = 'socket.cryptohack.org'
+PORT = 13402
+p = remote(HOST, PORT)
+
+
+def json_send(hsh):
+    request = json.dumps(hsh).encode()
+    p.sendline(request)
+
+def json_recv():
+    line = p.recvline()
+    return json.loads(line.decode())
+
+p.recvline()
+n = 39 #len(FLAG)
+sha_set = {sha256(n * long_to_bytes(i)).hexdigest() for i in range(256)}
+l = [0 for _ in range(n)]
+ans = [0 for _ in range(n)]
+for i in range(n):
+    print(i)
+    for j in range(8):
+        l[i] = (1 << j)
+        st = ''.join(['{:02x}'.format(c) for c in l])
+        json_send({'option': 'mix', 'data': st})
+        y = json_recv()
+        pos_sha = y['mixed']
+        if pos_sha not in sha_set:
+            ans[i] |= l[i]
+        l[i] = 0
+print(''.join([chr(c) for c in ans]))
